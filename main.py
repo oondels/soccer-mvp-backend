@@ -1,4 +1,5 @@
 from src import create_app
+import os
 
 app = create_app()
 
@@ -9,4 +10,5 @@ def helth_check():
 
 
 if __name__ == "__main__":
-    app.run()
+    dev_mode = os.getenv('DEV_ENV') == 'development'
+    app.run(debug=dev_mode)
