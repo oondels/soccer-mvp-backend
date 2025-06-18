@@ -1,4 +1,5 @@
 import os
+from flasgger import Swagger
 from flask import Flask
 from src.routes import register_routes
 from src.database.db import db
@@ -18,6 +19,7 @@ def create_app():
     
     db.init_app(app)
     bcrypt.init_app(app)
+    Swagger(app)
     
     register_routes(app)
 

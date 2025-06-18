@@ -23,6 +23,32 @@ def get_users():
 
 @users_bp.route("/", methods=["POST"])
 def create_user():
+    """
+    Create a new user
+    ---
+    tags:
+      - Users
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              email:
+                type: string
+              password:
+                type: string
+              birth:
+                type: string
+    responses:
+      201:
+        description: User created successfully
+      400:
+        description: Email already exists
+    """
     user_data = request.get_json()
 
     stmt = userModel.filter_by(email=user_data["email"])
