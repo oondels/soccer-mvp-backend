@@ -1,10 +1,10 @@
 import os
 from flask import Blueprint, request, jsonify
-from src.database.models.user import User
-from src.dependencies import login_manager
+from src.models.user import User
+from src.extensions import login_manager
 from src.database.db import db
 from datetime import datetime, timedelta
-from src.helper import token_required
+from src.utils.helper import token_required
 import jwt
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
-from src.database.models.user import User
+from src.models.user import User
 from src.database.db import db
-from src.dependencies import bcrypt
+from src.extensions import bcrypt
 
 users_bp = Blueprint("users", __name__, url_prefix="/users")
 userModel = db.select(User)
