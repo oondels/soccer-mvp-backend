@@ -21,6 +21,54 @@ def get_users():
     return jsonify({"users": user_list}), 200
 
 
+@users_bp.route("/<int:id>", methods=["GET"])
+def get_user(id):
+    """
+    Get a user by ID
+    ---
+    tags:
+      - Users
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: The ID of the user to retrieve
+    responses:
+      200:
+        description: User found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                email:
+                  type: string
+                birth:
+                  type: string
+      404:
+        description: User not found
+    """
+    stmt = userModel.filter_by(id=id)
+    user = db.session.execute(stmt).scalar_one_or_none()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    return jsonify(
+        {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "birth": user.birth,
+        }
+    ), 200
+
+
 @users_bp.route("/", methods=["POST"])
 def create_user():
     """
