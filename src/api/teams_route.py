@@ -84,6 +84,17 @@ def create_team():
                   type: string
                 message:
                   type: string
+      409:
+        description: Conflito - Nome de equipe já existente
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                message:
+                  type: string
       500:
         description: Database error
     """
@@ -136,6 +147,14 @@ def create_team():
         }), 400
 
     try:
+        # Verificar se já existe uma equipe com o mesmo nome
+        existing_team = db.session.query(Team).filter_by(name=team_name).first()
+        if existing_team:
+            return jsonify({
+                "error": "Conflict",
+                "message": "Já existe uma equipe com este nome. Escolha um nome diferente."
+            }), 409
+
         new_team = Team(name=team_name)
         
         if description:
@@ -257,6 +276,8 @@ def edit_team(team_id):
         description: Erro de validação
       404:
         description: Equipe não encontrada
+      409:
+        description: Conflict - Nome da equipe já existe
       500:
         description: Erro no banco de dados
     """
@@ -296,6 +317,17 @@ def edit_team(team_id):
                     "error": "Erro de validação",
                     "message": "O nome da equipe não pode exceder 255 caracteres"
                 }), 400
+            
+            # Verificar se já existe outra equipe com o mesmo nome (exceto a atual)
+            existing_team = db.session.query(Team).filter(
+                Team.name == team_name,
+                Team.id != team_id
+            ).first()
+            if existing_team:
+                return jsonify({
+                    "error": "Conflict",
+                    "message": "Já existe uma equipe com este nome. Escolha um nome diferente."
+                }), 409
             
             team.name = team_name
 
@@ -366,49 +398,16 @@ def edit_team(team_id):
 @teams_bp.route("/", methods=["GET"])
 def get_teams():
     """
-    Obter todas as equipes
+    Obter todas as equipes cadastradas
     ---
     tags:
       - Teams
     responses:
       200:
         description: Lista de equipes recuperada com sucesso
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                success:
-                  type: boolean
-                message:
-                  type: string
-                data:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      team_id:
-                        type: integer
-                      name:
-                        type: string
-                      description:
-                        type: string
-                      team_profile_image:
-                        type: string
-                      team_banner_image:
-                        type: string
-                      captain_id:
-                        type: integer
-                      is_active:
-                        type: boolean
-                      ranking_points:
-                        type: integer
-                      members_count:
-                        type: integer
-                      create_date:
-                        type: string
-                      update_date:
-                        type: string
+      500:
+        description: Erro no banco de dados
+        
     """
     try:
         teams = db.session.execute(teamModel.order_by(Team.id)).scalars().all()
@@ -449,66 +448,17 @@ def get_team(team_id):
     Obter uma equipe por ID com lista de jogadores
     ---
     tags:
-      - Teams
+      - Times de Futebol (Teams)
     parameters:
       - in: path
         name: team_id
         required: true
         schema:
           type: integer
-        description: O ID da equipe a ser recuperada
+        description: O ID da equipe a ser procurada
     responses:
       200:
         description: Equipe encontrada
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                success:
-                  type: boolean
-                message:
-                  type: string
-                data:
-                  type: object
-                  properties:
-                    team_id:
-                      type: integer
-                    name:
-                      type: string
-                    description:
-                      type: string
-                    team_profile_image:
-                      type: string
-                    team_banner_image:
-                      type: string
-                    captain_id:
-                      type: integer
-                    notes:
-                      type: string
-                    is_active:
-                      type: boolean
-                    ranking_points:
-                      type: integer
-                    members_count:
-                      type: integer
-                    create_date:
-                      type: string
-                    update_date:
-                      type: string
-                    players:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          user_id:
-                            type: integer
-                          name:
-                            type: string
-                          email:
-                            type: string
-                          join_date:
-                            type: string
       404:
         description: Equipe não encontrada
       500:
