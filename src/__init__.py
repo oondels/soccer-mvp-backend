@@ -27,12 +27,31 @@ def create_app(config_name=None):
     bcrypt.init_app(app)
     db.init_app(app)
     Migrate(app, db)
-    Swagger(app)
+    
+    # Configurar Swagger com OpenAPI 3.0.2
+    swagger_config = {
+        "headers": [],
+        "specs": [
+            {
+                "endpoint": 'apispec',
+                "route": '/apispec.json',
+                "rule_filter": lambda rule: True,
+                "model_filter": lambda tag: True,
+            }
+        ],
+        "static_url_path": "/flasgger_static",
+        "swagger_ui": True,
+        "specs_route": "/apidocs/"
+    }
+    
+    swagger_template = app.config.get('SWAGGER', {})
+    Swagger(app, config=swagger_config, template=swagger_template)
     
     # Importar modelos para garantir que as tabelas sejam criadas
     with app.app_context():
         from src.models.teams import Team
         from src.models.team_players import TeamPlayer
+        # from src.models.user import User  # Se existir
         db.create_all()
     
     register_routes(app)
