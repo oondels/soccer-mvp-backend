@@ -2,6 +2,7 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from src.models.teams import Team
 from src.models.team_players import TeamPlayer
+from src.models.user import User
 from src.database.db import db
 
 teams_bp = Blueprint("teams", __name__, url_prefix="/teams")
@@ -445,7 +446,7 @@ def get_teams():
 @teams_bp.route("/<int:team_id>", methods=["GET"])
 def get_team(team_id):
     """
-    Obter uma equipe por ID
+    Obter uma equipe por ID com lista de jogadores
     ---
     tags:
       - Teams
@@ -495,6 +496,19 @@ def get_team(team_id):
                       type: string
                     update_date:
                       type: string
+                    players:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          user_id:
+                            type: integer
+                          name:
+                            type: string
+                          email:
+                            type: string
+                          join_date:
+                            type: string
       404:
         description: Equipe não encontrada
       500:
@@ -507,6 +521,21 @@ def get_team(team_id):
                 "error": "Não encontrado",
                 "message": f"Equipe não encontrada"
             }), 404
+        
+        # Buscar jogadores da equipe
+        team_players_query = db.session.query(TeamPlayer, User).join(
+            User, TeamPlayer.user_id == User.id
+        ).filter(TeamPlayer.team_id == team_id).all()
+        
+        # Montar lista de jogadores
+        players_list = []
+        for team_player, user in team_players_query:
+            players_list.append({
+                "user_id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "join_date": team_player.create_date.isoformat() if team_player.create_date else None
+            })
         
         return jsonify({
             "success": True,
@@ -523,7 +552,8 @@ def get_team(team_id):
                 "ranking_points": team.ranking_points,
                 "members_count": team.members_count,
                 "create_date": team.create_date.isoformat() if team.create_date else None,
-                "update_date": team.update_date.isoformat() if team.update_date else None
+                "update_date": team.update_date.isoformat() if team.update_date else None,
+                "players": players_list
             }
         }), 200
         
