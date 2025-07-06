@@ -19,6 +19,44 @@ class Config:
     JWT_COOKIE_SECURE = True
     JWT_COOKIE_HTTPONLY = True
     JWT_COOKIE_SAMESITE = "Strict"
+    
+    # Swagger Configuration
+    SWAGGER = {
+        'title': 'Soccer MVP API',
+        'uiversion': 3,
+        'openapi': '3.0.2',
+        'description': 'API para gerenciamento de equipes de futebol',
+        'version': '1.0.0',
+        'termsOfService': '',
+        'contact': {
+            'name': 'Soccer MVP Team',
+            'email': 'support@soccermvp.com'
+        },
+        'license': {
+            'name': 'MIT',
+            'url': 'https://opensource.org/licenses/MIT'
+        },
+        'servers': [
+            {
+                'url': 'http://localhost:5000',
+                'description': 'Development server'
+            }
+        ],
+        'tags': [
+            {
+                'name': 'Teams',
+                'description': 'Operações relacionadas a equipes'
+            },
+            {
+                'name': 'Users',
+                'description': 'Operações relacionadas a usuários'
+            },
+            {
+                'name': 'Auth',
+                'description': 'Operações de autenticação'
+            }
+        ]
+    }
 
 
 class DevelopmentConfig(Config):
