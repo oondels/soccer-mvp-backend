@@ -17,6 +17,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 def create_app(config_name=None):
     if config_name is None:
         config_name = os.getenv('FLASK_ENV', 'development')
+        print(f"Using configuration: {config_name}")
     
     app = Flask(__name__)
     
@@ -27,6 +28,12 @@ def create_app(config_name=None):
     db.init_app(app)
     Migrate(app, db)
     Swagger(app)
+    
+    # Importar modelos para garantir que as tabelas sejam criadas
+    with app.app_context():
+        from src.models.teams import Team
+        from src.models.team_players import TeamPlayer
+        db.create_all()
     
     register_routes(app)
 
