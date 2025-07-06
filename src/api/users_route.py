@@ -59,14 +59,17 @@ def get_user(id):
     if not user:
         return jsonify({"message": "User not found"}), 404
 
-    return jsonify(
-        {
-            "id": user.id,
-            "name": user.name,
-            "email": user.email,
-            "birth": user.birth,
-        }
-    ), 200
+    return (
+        jsonify(
+            {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "birth": user.birth,
+            }
+        ),
+        200,
+    )
 
 
 @users_bp.route("/", methods=["POST"])
@@ -136,9 +139,73 @@ def create_user():
 
 @users_bp.route("/<int:id>", methods=["PUT"])
 def edit_user(id):
+    """Update an existing user
+    ---
+    tags:
+      - Users
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: The ID of the user to update
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              email:
+                type: string
+              birth:
+                type: string
+              password:
+                type: string
+    responses:
+      200:
+        description: User updated successfully
+      400:
+        description: Email already in use
+      404:
+        description: User not found
+    """
     stmt = userModel.filter_by(id=id)
     user = db.session.execute(stmt).scalar_one_or_none()
     if not user:
-        return (jsonify({"message": "User not found"}), 404)
+        return jsonify({"message": "User not found"}), 404
 
-    return f"Editing user with id {id}"
+    user_data = request.get_json()
+
+    if "email" in user_data and user_data["email"] != user.email:
+        email_stmt = userModel.filter_by(email=user_data["email"])
+        existing_user = db.session.execute(email_stmt).scalar_one_or_none()
+        if existing_user:
+            return jsonify({"message": "Email already in use"}), 400
+        user.email = user_data["email"]
+
+    if "name" in user_data:
+        user.name = user_data["name"]
+
+    if "birth" in user_data:
+        user.birth = user_data["birth"]
+
+    db.session.commit()
+
+    return (
+        jsonify(
+            {
+                "message": "User updated successfully",
+                "user": {
+                    "id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                    "birth": user.birth,
+                },
+            }
+        ),
+        200,
+    )
