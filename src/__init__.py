@@ -2,6 +2,7 @@ import os
 from flasgger import Swagger
 from flask import Flask
 from flask_migrate import Migrate
+from flask_cors import CORS
 from src.api import register_routes
 from src.database.db import db
 from src.extensions import bcrypt
@@ -22,6 +23,18 @@ def create_app(config_name=None):
     app = Flask(__name__)
     
     app.config.from_object(config[config_name])
+    
+    # Configurar CORS
+    CORS(app, 
+         origins=[
+             "http://localhost:3000",
+             "http://localhost:8000",
+             "http://127.0.0.1:3000",
+             "http://127.0.0.1:8000",
+         ],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+         allow_headers=['Content-Type', 'Authorization'],
+         supports_credentials=True)
     
     login_manager.init_app(app)
     bcrypt.init_app(app)
