@@ -402,12 +402,100 @@ def get_teams():
     ---
     tags:
       - Teams
+    summary: Lista todas as equipes
+    description: |
+      Retorna uma lista completa de todas as equipes cadastradas no sistema, 
+      ordenadas por ID. Cada equipe inclui informações básicas como nome, 
+      descrição, imagens, capitão, status, pontos de ranking e número de membros.
     responses:
       200:
         description: Lista de equipes recuperada com sucesso
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  description: Indica se a operação foi bem-sucedida
+                  example: true
+                message:
+                  type: string
+                  description: Mensagem de confirmação
+                  example: "Busca realizada com sucesso!"
+                data:
+                  type: array
+                  description: Lista de equipes encontradas
+                  items:
+                    type: object
+                    properties:
+                      team_id:
+                        type: integer
+                        description: ID único da equipe
+                        example: 1
+                      name:
+                        type: string
+                        description: Nome da equipe
+                        example: "Barcelona FC"
+                      description:
+                        type: string
+                        nullable: true
+                        description: Descrição da equipe
+                        example: "Equipe de futebol profissional"
+                      team_profile_image:
+                        type: string
+                        nullable: true
+                        description: URL da imagem de perfil da equipe
+                        example: "https://example.com/profile.jpg"
+                      team_banner_image:
+                        type: string
+                        nullable: true
+                        description: URL da imagem de banner da equipe
+                        example: "https://example.com/banner.jpg"
+                      captain_id:
+                        type: integer
+                        nullable: true
+                        description: ID do capitão da equipe
+                        example: 10
+                      is_active:
+                        type: boolean
+                        description: Status de atividade da equipe
+                        example: true
+                      ranking_points:
+                        type: integer
+                        description: Pontos de ranking da equipe
+                        example: 1500
+                      members_count:
+                        type: integer
+                        description: Número de membros na equipe
+                        example: 15
+                      create_date:
+                        type: string
+                        format: date-time
+                        nullable: true
+                        description: Data de criação da equipe (ISO 8601)
+                        example: "2024-01-15T10:30:00Z"
+                      update_date:
+                        type: string
+                        format: date-time
+                        nullable: true
+                        description: Data da última atualização (ISO 8601)
+                        example: "2024-02-20T14:45:00Z"
       500:
-        description: Erro no banco de dados
-        
+        description: Erro interno do servidor
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  description: Tipo do erro
+                  example: "Erro no banco de dados"
+                message:
+                  type: string
+                  description: Mensagem detalhada do erro
+                  example: "Falha ao encontrar equipes. Por favor, tente novamente."
     """
     try:
         teams = db.session.execute(teamModel.order_by(Team.id)).scalars().all()
@@ -431,7 +519,7 @@ def get_teams():
         
         return jsonify({
             "success": True,
-            "message": "Equipes encontradas com sucesso",
+            "message": "Busca realizada com sucesso!",
             "data": team_list
         }), 200
         
@@ -448,21 +536,88 @@ def get_team(team_id):
     Obter uma equipe por ID com lista de jogadores
     ---
     tags:
-      - Times de Futebol (Teams)
+      - Teams
     parameters:
       - in: path
         name: team_id
         required: true
         schema:
           type: integer
-        description: O ID da equipe a ser procurada
+        description: O ID da equipe a ser recuperada
     responses:
       200:
         description: Equipe encontrada
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                data:
+                  type: object
+                  properties:
+                    team_id:
+                      type: integer
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    team_profile_image:
+                      type: string
+                    team_banner_image:
+                      type: string
+                    captain_id:
+                      type: integer
+                    notes:
+                      type: string
+                    is_active:
+                      type: boolean
+                    ranking_points:
+                      type: integer
+                    members_count:
+                      type: integer
+                    create_date:
+                      type: string
+                    update_date:
+                      type: string
+                    players:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          user_id:
+                            type: integer
+                          name:
+                            type: string
+                          email:
+                            type: string
+                          join_date:
+                            type: string
       404:
         description: Equipe não encontrada
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                message:
+                  type: string
       500:
         description: Erro no banco de dados
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                message:
+                  type: string
     """
     try:
         team = db.session.get(Team, team_id)
@@ -553,6 +708,12 @@ def delete_team(team_id):
                 "message": f"Equipe não encontrada. Tente novamente."
             }), 404
         
+        # Primeiro, deletar todos os jogadores da equipe
+        team_players = db.session.query(TeamPlayer).filter_by(team_id=team_id).all()
+        for team_player in team_players:
+            db.session.delete(team_player)
+        
+        # Depois, deletar a equipe
         db.session.delete(team)
         db.session.commit()
         
@@ -562,6 +723,7 @@ def delete_team(team_id):
         }), 200
         
     except Exception as e:
+        print(f"Erro ao deletar equipe: {e}")
         db.session.rollback()
         return jsonify({
             "error": "Erro no banco de dados",
